@@ -8,19 +8,17 @@ public class InteractableButton : Interactables
     [SerializeField]
     buttonEvent buttonInteract;
 
-    // Start is called before the first frame update
-    void Start()
+    protected override void Start()
     {
-        buttonInteract.Invoke(gameObject);
+        base.Start();
     }
-
 
     public void Interact(GameObject obj)
     {
-        if (obj.CompareTag("Player") && IsInteractableByPlayer)
-        {
+       
+       
             buttonInteract.Invoke(gameObject);
-        }
+        
     }
         
         
@@ -31,4 +29,5 @@ public class InteractableButton : Interactables
 [System.Serializable]
 public class buttonEvent : UnityEvent<GameObject>
 {
+
 }

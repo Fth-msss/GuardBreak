@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using Unity.VisualScripting.Antlr3.Runtime.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,6 +13,8 @@ public class Interactables : MonoBehaviour
     bool isInteractableByPlayer;
     [SerializeField]
     bool isInteractableByOthers;
+    [SerializeField]
+    int InteractPriority;
 
     [Header("interaction settings")]
     [SerializeField]
@@ -27,18 +30,46 @@ public class Interactables : MonoBehaviour
     [SerializeField]
     UnityEvent onInteract;
 
+    [SerializeField]
+    List<GameObject> PlayersInRange;
+
     public bool IsInteractableByPlayer { get => isInteractableByPlayer; }
     public bool IsInteractableByOthers { get => isInteractableByOthers; }
 
 
     
 
-    private void Start()
+    protected virtual void Start()
     {
-        if(interactPoint == null) { interactPoint = gameObject; }
-        if(interactTriggerCollider == null) { Debug.LogError("no collider on interactable"); }
+        //enable interaction  
+        if(isInteractableByPlayer || isInteractableByOthers) 
+        {
+            //set interact range
+            if (interactPoint == null) 
+            {
+                Debug.LogWarning("interactable has no set interact point but set as interactable");
+                interactPoint = gameObject;
+               
+            }
 
-        if(!isInteractableByPlayer) { interactTriggerCollider.enabled = false; }
+
+            if (interactTriggerCollider == null) { Debug.LogError("interactable has no trigger collider set"); }
+            else 
+            {
+                if (interactTriggerCollider is SphereCollider) 
+                {
+                    SphereCollider Scollider = interactTriggerCollider as SphereCollider;
+                    Scollider.radius = interactRadius;
+                }
+            }
+
+        }
+
+
+        
+       
+
+
     }
 
 
@@ -57,7 +88,7 @@ public class Interactables : MonoBehaviour
     //send a feedback on players who can interact with this object
     private void Update()
     {
-        if(RequireRaycast) 
+        if(RequireRaycast && PlayersInRange.Count>0) 
         {
         foreach (GameObject player in PlayersInRange) 
             {
@@ -74,21 +105,32 @@ public class Interactables : MonoBehaviour
                 {
                     if (ReferenceEquals(player,hit.collider.gameObject)) 
                     {
-                    //player is able to interact
+                        //player is able to interact
                     }
                   
                 }
+                Ray ray = new Ray(startPoint, direction);
+                
+                bool hasHit = Physics.Raycast(ray, out hit, distance);
+
+                Color rayColor = hasHit ? Color.green : Color.red;
+                Debug.DrawRay(ray.origin, ray.direction * (hasHit ? hit.distance : distance), rayColor);
 
             }
         }
+        else if(PlayersInRange.Count>0) 
+        {
+        //players are able to interact
+        }
     }
 
-    List<GameObject> PlayersInRange;
+   
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Player")) 
         {
+            Debug.Log("added something in interact list");
         PlayersInRange.Add(other.gameObject);
         }
     }
